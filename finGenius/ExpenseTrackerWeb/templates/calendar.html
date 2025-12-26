@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}📅 Calendar - Fin Genius{% endblock %}
+
+{% block content %}
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+                        
+                    <div class="purple-overlay"></div>
+                    <div class="icon-cutout"></div>
+                </div>
+            </div>
+                    <div class="shape purple-layer"></div>
+                </div>
+            </div>
+            Spending Calendar
+        </h1>
+        <p class="dashboard-subtitle">Visualize your spending patterns with our interactive calendar heatmap! 🔥</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-grid">
+        <!-- Calendar Navigation -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: var(--text-primary); margin: 0;" id="month-year">{{ month }} {{ year }}</h3>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <button class="btn btn-outline btn-sm" id="prev-month">
+                        ⬅️ Previous
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="current-month-btn">
+                        📅 Today
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="next-month">
+                        Next ➡️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-container">
+                <!-- Day headers -->
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Sun
+                    </div>
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Mon
+                    </div>
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Tue
+                    </div>
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Wed
+                    </div>
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Thu
+                    </div>
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Fri
+                    </div>
+                    <div style="text-align: center; font-weight: 600; color: var(--text-primary); padding: 0.5rem;">Sat
+                    </div>
+                </div>
+
+                <!-- Calendar days -->
+                <div id="calendar-grid" class="calendar">
+                    <!-- Days will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div
+                style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">📊 Spending Intensity Legend</h4>
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 20px; height: 20px; background: var(--success-color); border-radius: 4px;">
+                        </div>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Low Spending</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 20px; height: 20px; background: var(--warning-color); border-radius: 4px;">
+                        </div>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Medium Spending</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 20px; height: 20px; background: var(--error-color); border-radius: 4px;">
+                        </div>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">High Spending</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div
+                            style="width: 20px; height: 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px;">
+                        </div>
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">No Spending</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Day Details -->
+        <div class="card" id="day-details" style="display: none;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">📅 Day Details</h3>
+            <div id="day-info">
+                <!-- Day information will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Monthly Summary -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">📊 Monthly Summary</h3>
+            <div style="space-y: 1rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small); margin-bottom: 1rem;">
+                    <span style="color: var(--text-primary); font-weight: 500;">Total Spent</span>
+                    <span style="color: var(--text-secondary); font-weight: 600;">{{ currency }}{{
+                        "%.2f"|format(daily_spending|sum(attribute='total')) }}</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small); margin-bottom: 1rem;">
+                    <span style="color: var(--text-primary); font-weight: 500;">Days with Expenses</span>
+                    <span style="color: var(--text-secondary); font-weight: 600;">{{ daily_spending|length }}</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small); margin-bottom: 1rem;">
+                    <span style="color: var(--text-primary); font-weight: 500;">Average per Day</span>
+                    <span style="color: var(--text-secondary); font-weight: 600;">
+                        {{ currency }}{{ "%.2f"|format((daily_spending|sum(attribute='total') / daily_spending|length)
+                        if daily_spending|length > 0 else 0) }}
+                    </span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <span style="color: var(--text-primary); font-weight: 500;">Highest Day</span>
+                    <span style="color: var(--text-secondary); font-weight: 600;">
+                        {% if daily_spending %}
+                        {{ currency }}{{ "%.2f"|format((daily_spending|max(attribute='total')).total) }}
+                        {% else %}
+                        {{ currency }}0.00
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spending Trends -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">📈 Weekly Trends</h3>
+            <div id="weekly-chart"
+                style="height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                    <p>Weekly spending chart coming soon!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">⚡ Quick Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <a href="{{ url_for('add_expense_page') }}" class="btn btn-primary">
+                    ➕ Add Expense
+                </a>
+                <button class="btn btn-outline" onclick="exportCalendarData()">
+                    📊 Export Data
+                </button>
+                <button class="btn btn-outline" onclick="printCalendar()">
+                    🖨️ Print Calendar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Calendar functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarData = {{ daily_spending| tojson
+    }};
+    const currentYear = {{ year }};
+    const currentMonth = {{ month }};
+
+    initializeCalendar(calendarData, currentYear, currentMonth);
+
+    // Year/month navigation
+    document.getElementById('prev-month').addEventListener('click', function () {
+        navigateMonth(-1);
+    });
+
+    document.getElementById('next-month').addEventListener('click', function () {
+        navigateMonth(1);
+    });
+
+    // Quick navigation
+    document.getElementById('current-month-btn').addEventListener('click', function () {
+        const now = new Date();
+        window.location.href = `?year=${now.getFullYear()}&month=${now.getMonth() + 1}`;
+    });
+        });
+
+    function initializeCalendar(dailySpending, year, month) {
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYearElement = document.getElementById('month-year');
+
+        // Set month/year header
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        monthYearElement.textContent = `${monthNames[month - 1]} ${year}`;
+
+        // Clear existing calendar
+        calendarGrid.innerHTML = '';
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month - 1, 1).getDay();
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        // Add empty cells for days before the first day of the month
+        for (let i = 0; i < firstDay; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'calendar-day empty';
+            calendarGrid.appendChild(emptyCell);
+        }
+
+        // Add cells for each day of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'calendar-day';
+            dayCell.textContent = day;
+
+            // Check if there's spending data for this day
+            const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            const dayData = dailySpending.find(d => d.date === dateString);
+
+            if (dayData) {
+                dayCell.classList.add('has-expense');
+
+                // Add spending amount
+                const amountElement = document.createElement('div');
+                amountElement.className = 'calendar-amount';
+                amountElement.textContent = `{{ currency }}${parseFloat(dayData.total).toFixed(2)}`;
+                dayCell.appendChild(amountElement);
+
+                // Add spending indicator based on amount
+                const maxAmount = Math.max(...dailySpending.map(d => d.total));
+                if (dayData.total > maxAmount * 0.7) {
+                    dayCell.classList.add('high-spending');
+                } else if (dayData.total < maxAmount * 0.3) {
+                    dayCell.classList.add('low-spending');
+                }
+            }
+
+            calendarGrid.appendChild(dayCell);
+        }
+    }
+
+    function navigateMonth(delta) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let year = parseInt(urlParams.get('year')) || new Date().getFullYear();
+        let month = parseInt(urlParams.get('month')) || new Date().getMonth() + 1;
+
+        month += delta;
+        if (month > 12) {
+            month = 1;
+            year++;
+        } else if (month < 1) {
+            month = 12;
+            year--;
+        }
+
+        window.location.href = `?year=${year}&month=${month}`;
+    }
+
+    function exportCalendarData() {
+        if (typeof showNotification === 'function') {
+            showNotification('Calendar export initiated! 📊', 'info');
+        }
+    }
+
+    function printCalendar() {
+        window.print();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fin Genius | Smarter Track. Smarter You.{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+
+<body data-currency="{{ currency|default('₹') }}">
+    <!-- Floating Background Animation -->
+    <div id="floating-background"></div>
+    <!-- Page Transition Loader -->
+    <div class="page-loader" id="page-loader">
+        <div class="loader-content">
+            <div class="loader-wrapper">
+                <div class="loader">
+                    <div class="loader-inner"></div>
+                </div>
+            </div>
+            <div class="loader-text">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"
+                        class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">🏠 Dashboard</a></li>
+                <li><a href="{{ url_for('add_income') }}"
+                        class="{{ 'active' if request.endpoint == 'add_income' else '' }}">💰 Add Income</a></li>
+                <li><a href="{{ url_for('add_expense') }}"
+                        class="{{ 'active' if request.endpoint == 'add_expense' else '' }}">💸 Add Expense</a></li>
+                <li><a href="{{ url_for('insights') }}"
+                        class="{{ 'active' if request.endpoint == 'insights' else '' }}">🧠 Insights</a></li>
+                <li><a href="{{ url_for('goals') }}" class="{{ 'active' if request.endpoint == 'goals' else '' }}">🎯
+                        Goals</a></li>
+                <li><a href="{{ url_for('group_expenses') }}"
+                        class="{{ 'active' if request.endpoint == 'group_expenses' else '' }}">👥 Group</a></li>
+                <li><a href="{{ url_for('settings') }}"
+                        class="{{ 'active' if request.endpoint == 'settings' else '' }}">⚙️ Settings</a></li>
+            </ul>
+            <div class="theme-toggle" id="theme-toggle">
+                <span id="theme-icon">🌸</span>
+                <span id="theme-name">Pastel</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Floating Action Buttons -->
+    <a href="{{ url_for('scan_receipt') }}" class="fab-camera" title="Scan Receipt" aria-label="Scan Receipt">📸</a>
+    <a href="{{ url_for('add_expense') }}" class="fab-btn" title="Add Expense" aria-label="Add Expense">➕</a>
+
+    {% block content %}{% endblock %}
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='localStorage.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboardIntegration.js') }}"></script>
+    <script>
+        // Global Theme Management
+        document.addEventListener('DOMContentLoaded', function () {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeName = document.getElementById('theme-name');
+
+            // Get saved theme or default to DARK
+            let currentTheme = localStorage.getItem('fingenius-theme') || 'dark';
+
+            // Apply theme immediately
+            setTheme(currentTheme);
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    // Cycle through themes: pastel -> dark -> neon -> pastel
+                    if (currentTheme === 'pastel') {
+                        currentTheme = 'dark';
+                    } else if (currentTheme === 'dark') {
+                        currentTheme = 'neon';
+                    } else {
+                        currentTheme = 'pastel';
+                    }
+
+                    setTheme(currentTheme);
+                });
+            }
+
+            function setTheme(theme) {
+                // Apply to documentElement (html tag)
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('fingenius-theme', theme);
+
+                // Update theme toggle display
+                if (themeIcon && themeName) {
+                    switch (theme) {
+                        case 'pastel':
+                            themeIcon.textContent = '🌸';
+                            themeName.textContent = 'Pastel';
+                            break;
+                        case 'dark':
+                            themeIcon.textContent = '🌙';
+                            themeName.textContent = 'Dark';
+                            break;
+                        case 'neon':
+                            themeIcon.textContent = '💡';
+                            themeName.textContent = 'Neon';
+                            break;
+                    }
+                }
+            }
+        });
+
+        // Page Loader
+        function showPageLoader() {
+            const loader = document.getElementById('page-loader');
+            if (loader) {
+                loader.classList.add('active');
+            }
+        }
+
+        // Navigation Links
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('a[href]');
+            navLinks.forEach(function (link) {
+                if (link.hostname === window.location.hostname && !link.getAttribute('href').startsWith('#') && !link.classList.contains('fab-btn')) {
+                    link.addEventListener('click', function (e) {
+                        showPageLoader();
+                    });
+                }
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

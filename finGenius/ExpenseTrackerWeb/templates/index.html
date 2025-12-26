@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Fin Genius | Smarter Track. Smarter You.{% endblock %}
+
+{% block content %}
+<!-- Fin Genius Intro Animation -->
+<div id="fingenius-intro">
+    <div class="logo-container">
+        <div class="logo-wrapper">
+            <svg class="logo-svg" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background Bars -->
+                <rect class="logo-bar bar-1" x="20" y="60" width="12" height="40" fill="#4CAF50" fill-opacity="0.8"
+                    rx="2" />
+                <rect class="logo-bar bar-2" x="38" y="45" width="12" height="55" fill="#43A047" fill-opacity="0.8"
+                    rx="2" />
+                <rect class="logo-bar bar-3" x="56" y="30" width="12" height="70" fill="#388E3C" fill-opacity="0.8"
+                    rx="2" />
+                <rect class="logo-bar bar-4" x="74" y="15" width="12" height="85" fill="#2E7D32" fill-opacity="0.8"
+                    rx="2" />
+                <rect class="logo-bar bar-5" x="92" y="5" width="12" height="95" fill="#1B5E20" fill-opacity="0.8"
+                    rx="2" />
+
+                <!-- Arrow Line -->
+                <path class="logo-arrow" d="M20 95 L45 65 L65 80 L115 30 L140 50 L165 15" stroke="#2E7D32"
+                    stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path class="logo-arrow-head" d="M155 22 L165 15 L168 25" stroke="#2E7D32" stroke-width="5" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round" />
+
+                <!-- Coins Group (Positioned on the Right) -->
+                <g transform="translate(130, 50)">
+                    <g class="logo-coins">
+                        <!-- Stacked Coins -->
+                        <rect class="coin-1" x="0" y="5" width="14" height="22" fill="#FFC107" rx="3" />
+                        <rect class="coin-2" x="12" y="0" width="14" height="28" fill="#FFA000" rx="3" />
+                        <circle class="coin-1-top" cx="7" cy="5" r="7" fill="#FFD54F" />
+                        <circle class="coin-2-top" cx="19" cy="0" r="7" fill="#FFB300" />
+                    </g>
+                </g>
+
+
+            </svg>
+        </div>
+        <h1 class="brand-name">Fin Genius</h1>
+        <div class="tagline">SMARTER TRACK. SMARTER YOU.</div>
+    </div>
+</div>
+
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Dashboard Header -->
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+
+            Fin Genius
+        </h1>
+        <p class="dashboard-subtitle">Smarter Track. Smarter You.</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Expense Distribution Pie Chart -->
+        <div class="card slide-left">
+            <div class="chart-container">
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value count-up" data-target="{{ current_month_total }}" data-currency="{{ currency }}">
+                    0.00</div>
+                <div class="stat-label">This Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value count-up" data-target="{{ expenses|length }}">0</div>
+                <div class="stat-label">Total Expenses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value count-up" data-target="{{ category_data|length }}">0</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">🎯</div>
+                <div class="stat-label">Goals Active</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card slide-right">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('add_income') }}" class="btn btn-primary"
+                style="flex: 1; min-width: 120px; text-align: center;">
+                💰 Add Income
+            </a>
+            <a href="{{ url_for('add_expense') }}" class="btn btn-outline"
+                style="flex: 1; min-width: 120px; text-align: center;">
+                💸 Add Expense
+            </a>
+            <a href="{{ url_for('scan_receipt') }}" class="btn btn-scan"
+                style="flex: 1; min-width: 120px; text-align: center;">
+                📸 Scan Receipt
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fin Genius Intro Animation
+    document.addEventListener('DOMContentLoaded', function () {
+        const intro = document.getElementById('fingenius-intro');
+        if (intro) {
+            // Check if intro has already been shown in this session
+            if (sessionStorage.getItem('introShown')) {
+                intro.style.display = 'none';
+            } else {
+                // Hide intro after 5 seconds
+                setTimeout(function () {
+                    intro.classList.add('fade-out');
+                    setTimeout(function () {
+                        intro.style.display = 'none';
+                        // Show loader briefly after intro
+                        const loader = document.getElementById('page-loader');
+                        if (loader) {
+                            loader.classList.add('active');
+                            setTimeout(() => {
+                                loader.classList.remove('active');
+                            }, 1000); // loader visible for 1s
+                        }
+                        // Save that intro has been shown
+                        sessionStorage.setItem('introShown', 'true');
+                    }, 500);
+                }, 5000);
+            }
+        }
+
+        // Initialize current date for quick add form
+        const dateInput = document.getElementById('quick-add-date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+
+        // Initialize expense distribution chart
+        const categories = JSON.parse('{{ categories|tojson|safe }}');
+        const amounts = JSON.parse('{{ amounts|tojson|safe }}');
+
+        if (categories.length > 0 && amounts.length > 0) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: amounts,
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40',
+                            '#8AC926',
+                            '#1982C4',
+                            '#6A4C93',
+                            '#F15BB5'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    return `${label}: ₹${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // Show message when no data
+            const chartElement = document.getElementById('expenseChart');
+            if (chartElement) {
+                chartElement.parentElement.innerHTML =
+                    '<div class="text-center p-4" style="color: var(--text-muted);">No expense data available yet! 💸</div>';
+            }
+        }
+    });
+</script>
+{% endblock %}

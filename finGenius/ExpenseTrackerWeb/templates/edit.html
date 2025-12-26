@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}✏️ Edit Expense - Fin Genius{% endblock %}
+
+{% block content %}
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Edit Expense</h1>
+        <p class="dashboard-subtitle">Update your expense details</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-grid">
+        <div class="card" style="grid-column: 1 / -1;">
+            <form method="POST" id="edit-expense-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📅 Date *</label>
+                        <input type="date" name="date" class="form-input" value="{{ expense.date }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🏷️ Category *</label>
+                        <select name="category" class="form-input" required>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {{ 'selected' if category==expense.category else '' }}>{{
+                                category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                            
+                    <div class="purple-overlay"></div>
+                    <div class="icon-cutout"></div>
+                </div>
+            </div>
+                    <div class="shape purple-layer"></div>
+                </div>
+            </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📝 Description</label>
+                        <input type="text" name="description" class="form-input"
+                            value="{{ expense.description or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">💰 Amount *</label>
+                        <div style="position: relative;">
+                            <span
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 600;">{{
+                                currency }}</span>
+                            <input type="number" step="0.01" name="amount" class="form-input"
+                                value="{{ expense.amount|abs }}" required style="padding-left: 2.5rem;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mood Tracking -->
+                <div class="form-group">
+                    <label class="form-label">😊 How are you feeling about this expense?</label>
+                    <div class="mood-selector" id="mood-selector">
+                        <div class="mood-option {{ 'selected' if expense.mood == '😊' else '' }}" data-mood="😊"
+                            title="Happy">😊</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '😄' else '' }}" data-mood="😄"
+                            title="Excited">😄</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '😔' else '' }}" data-mood="😔"
+                            title="Sad">😔</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '😤' else '' }}" data-mood="😤"
+                            title="Frustrated">😤</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '🤔' else '' }}" data-mood="🤔"
+                            title="Thoughtful">🤔</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '🎉' else '' }}" data-mood="🎉"
+                            title="Celebrating">🎉</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '😌' else '' }}" data-mood="😌"
+                            title="Content">😌</div>
+                        <div class="mood-option {{ 'selected' if expense.mood == '😰' else '' }}" data-mood="😰"
+                            title="Worried">😰</div>
+                    </div>
+                    <input type="hidden" name="mood" value="{{ expense.mood or '😊' }}" id="selected-mood">
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary btn-lg">Update</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Mood selector logic
+        const moodOptions = document.querySelectorAll('.mood-option');
+        const selectedMoodInput = document.getElementById('selected-mood');
+
+        moodOptions.forEach(option => {
+            option.addEventListener('click', function () {
+                moodOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedMoodInput.value = this.dataset.mood;
+            });
+        });
+
+        // Form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const amount = parseFloat(document.querySelector('input[name="amount"]').value);
+                if (isNaN(amount) || amount <= 0) {
+                    e.preventDefault();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Please enter a valid amount! 💰', 'error');
+                    } else {
+                        alert('Please enter a valid amount!');
+                    }
+                    return;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

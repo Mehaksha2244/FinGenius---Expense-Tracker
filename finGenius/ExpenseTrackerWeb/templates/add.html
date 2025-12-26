@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}➕ Add Expense - Fin Genius{% endblock %}
+
+{% block content %}
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">➕ Add New Expense</h1>
+        <p class="dashboard-subtitle">Track your spending with mood and receipt scanning! 📸</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-grid">
+        <!-- Add Expense Form -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3
+                style="margin-bottom: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                💰 Expense Details
+            </h3>
+
+            <form action="{{ url_for('add_expense') }}" method="POST" enctype="multipart/form-data" id="expense-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📅 Date *</label>
+                        <input type="date" name="date" class="form-input" id="expense-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🏷️ Category *</label>
+                        <select name="category" class="form-input" id="expense-category" required>
+                            <option value="">Select a category</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📝 Description</label>
+                        <input type="text" name="description" class="form-input"
+                            placeholder="What did you spend on? (e.g., Coffee with friends, Groceries)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">💰 Amount *</label>
+                        <div style="position: relative;">
+                            <span
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 600;">{{
+                                currency }}</span>
+                            <input type="number" step="0.01" name="amount" class="form-input" placeholder="0.00"
+                                required style="padding-left: 2.5rem;" id="expense-amount">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mood Tracking -->
+                <div class="form-group">
+                    <label class="form-label">😊 How are you feeling about this expense?</label>
+                    <div class="mood-selector" id="mood-selector">
+                        <div class="mood-option" data-mood="😊" title="Happy">😊</div>
+                        <div class="mood-option" data-mood="😄" title="Excited">😄</div>
+                        <div class="mood-option" data-mood="😔" title="Sad">😔</div>
+                        <div class="mood-option" data-mood="😤" title="Frustrated">😤</div>
+                        <div class="mood-option" data-mood="🤔" title="Thoughtful">🤔</div>
+                        <div class="mood-option" data-mood="🎉" title="Celebrating">🎉</div>
+                        <div class="mood-option" data-mood="😌" title="Content">😌</div>
+                        <div class="mood-option" data-mood="😰" title="Worried">😰</div>
+                    </div>
+                    <input type="hidden" name="mood" value="😊" id="selected-mood">
+                </div>
+
+                <!-- Receipt Upload -->
+                <div class="form-group">
+                    <label class="form-label">📸 Receipt (Optional)</label>
+                    <div style="border: 2px dashed var(--border-color); border-radius: var(--border-radius-small); padding: 2rem; text-align: center; transition: var(--transition);"
+                        id="receipt-drop-zone">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">📄</div>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Drop your receipt here or click to
+                            upload</p>
+                        <input type="file" name="receipt" id="receipt-input" accept="image/*" style="display: none;">
+                        <button type="button" class="btn btn-outline"
+                            onclick="document.getElementById('receipt-input').click()">
+                            📁 Choose File
+                        </button>
+                        <div id="receipt-preview" style="display: none; margin-top: 1rem;">
+                            <img id="preview-image"
+                                style="max-width: 200px; max-height: 200px; border-radius: var(--border-radius-small);">
+                            <p id="preview-filename" style="color: var(--text-secondary); margin-top: 0.5rem;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Amount Buttons -->
+                <div class="form-group">
+                    <label class="form-label">⚡ Quick Amounts</label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(10)">{{ currency
+                            }}10</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(25)">{{ currency
+                            }}25</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(50)">{{ currency
+                            }}50</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(100)">{{ currency
+                            }}100</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(200)">{{ currency
+                            }}200</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(500)">{{ currency
+                            }}500</button>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                        💰 Add Expense
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-lg">
+                        ❌ Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tips and Help -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">💡 Pro Tips</h3>
+            <div style="color: var(--text-secondary); line-height: 1.6;">
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>📸 Receipt Scanning:</strong> Upload a clear photo of your receipt for automatic amount
+                    detection!
+                </div>
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>😊 Mood Tracking:</strong> Track how you feel about each expense to understand your spending
+                    patterns.
+                </div>
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>🏷️ Categories:</strong> Use consistent categories to get better insights and analytics.
+                </div>
+                <div style="padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>⚡ Quick Add:</strong> Use the quick amount buttons for common expenses like coffee or lunch.
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Expenses Preview -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">📋 Recent Expenses</h3>
+            <div id="recent-expenses" style="max-height: 300px; overflow-y: auto;">
+                <div class="text-center p-4" style="color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+                    <p>Loading recent expenses...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize form
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('expense-date');
+        if (dateInput) {
+            dateInput.value = today;
+        }
+
+        // Form validation
+        const form = document.getElementById('expense-form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const amount = parseFloat(document.getElementById('expense-amount').value);
+                if (isNaN(amount) || amount <= 0) {
+                    e.preventDefault();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Please enter a valid amount! 💰', 'error');
+                    } else {
+                        alert('Please enter a valid amount!');
+                    }
+                    return;
+                }
+            });
+        }
+
+        // Mood selector
+        const moodOptions = document.querySelectorAll('.mood-option');
+        const selectedMoodInput = document.getElementById('selected-mood');
+
+        moodOptions.forEach(option => {
+            option.addEventListener('click', function () {
+                // Remove selected class from all
+                moodOptions.forEach(opt => opt.classList.remove('selected'));
+                // Add selected class to clicked
+                this.classList.add('selected');
+                // Update hidden input
+                selectedMoodInput.value = this.dataset.mood;
+            });
+        });
+
+        // Set first mood as selected by default
+        if (moodOptions.length > 0) {
+            moodOptions[0].classList.add('selected');
+        }
+
+        // Receipt drag and drop
+        const dropZone = document.getElementById('receipt-drop-zone');
+        const fileInput = document.getElementById('receipt-input');
+        const previewDiv = document.getElementById('receipt-preview');
+        const previewImage = document.getElementById('preview-image');
+        const previewFilename = document.getElementById('preview-filename');
+
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', function (e) {
+                if (e.target !== fileInput && e.target.tagName !== 'BUTTON') {
+                    fileInput.click();
+                }
+            });
+
+            dropZone.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--accent-color)';
+                this.style.backgroundColor = 'var(--bg-secondary)';
+            });
+
+            dropZone.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color)';
+                this.style.backgroundColor = 'transparent';
+            });
+
+            dropZone.addEventListener('drop', function (e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color)';
+                this.style.backgroundColor = 'transparent';
+
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect(fileInput.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    handleFileSelect(this.files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImage.src = e.target.result;
+                    previewFilename.textContent = file.name;
+                    previewDiv.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
+    function setAmount(amount) {
+        const amountInput = document.getElementById('expense-amount');
+        if (amountInput) {
+            amountInput.value = amount;
+        }
+    }
+</script>
+{% endblock %}

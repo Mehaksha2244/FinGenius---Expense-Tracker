@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}💸 Add Expense - Fin Genius{% endblock %}
+
+{% block content %}
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Page Header -->
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            
+            Add New Expense
+        </h1>
+        <p class="dashboard-subtitle">Track your spending, achieve your goals, and build better financial habits! 💪</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-grid">
+        <!-- Add Expense Form -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3
+                style="margin-bottom: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                💸 Expense Details
+            </h3>
+
+            <form action="{{ url_for('add_expense') }}" method="POST" enctype="multipart/form-data" id="expense-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📅 Date *</label>
+                        <input type="date" name="date" class="form-input" id="expense-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🏷️ Category *</label>
+                        <select name="category" class="form-input" id="expense-category" required>
+                            <option value="">Select a category</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📝 Description</label>
+                        <input type="text" name="description" class="form-input"
+                            placeholder="What did you spend on? (e.g., Coffee with friends, Groceries)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">💰 Amount *</label>
+                        <div style="position: relative;">
+                            <span
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 600;">{{
+                                currency }}</span>
+                            <input type="number" step="0.01" name="amount" class="form-input" placeholder="0.00"
+                                required style="padding-left: 2.5rem;" id="expense-amount">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mood Tracking -->
+                <div class="form-group">
+                    <label class="form-label">😊 How are you feeling about this expense?</label>
+                    <div class="mood-selector" id="mood-selector">
+                        <div class="mood-option" data-mood="😊" title="Happy">😊</div>
+                        <div class="mood-option" data-mood="😄" title="Excited">😄</div>
+                        <div class="mood-option" data-mood="😔" title="Sad">😔</div>
+                        <div class="mood-option" data-mood="😤" title="Frustrated">😤</div>
+                        <div class="mood-option" data-mood="🤔" title="Thoughtful">🤔</div>
+                        <div class="mood-option" data-mood="🎉" title="Celebrating">🎉</div>
+                        <div class="mood-option" data-mood="😌" title="Content">😌</div>
+                        <div class="mood-option" data-mood="😰" title="Worried">😰</div>
+                    </div>
+                    <input type="hidden" name="mood" value="😊" id="selected-mood">
+                </div>
+
+                <!-- Quick Amount Buttons -->
+                <div class="form-group">
+                    <label class="form-label">⚡ Quick Amounts</label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(10)">{{ currency
+                            }}10</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(25)">{{ currency
+                            }}25</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(50)">{{ currency
+                            }}50</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(100)">{{ currency
+                            }}100</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(200)">{{ currency
+                            }}200</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setAmount(500)">{{ currency
+                            }}500</button>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                        💸 Add Expense
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-lg">
+                        ❌ Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tips and Help -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">💡 Pro Tips</h3>
+            <div style="color: var(--text-secondary); line-height: 1.6;">
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>😊 Mood Tracking:</strong> Track how you feel about each expense to understand your spending
+                    patterns.
+                </div>
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>🏷️ Categories:</strong> Use consistent categories to get better insights and analytics.
+                </div>
+                <div style="padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>⚡ Quick Add:</strong> Use the quick amount buttons for common expenses like coffee or lunch.
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Expenses Preview -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">📋 Recent Expenses</h3>
+            <div id="recent-expenses" style="max-height: 300px; overflow-y: auto;">
+                <div class="text-center p-4" style="color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+                    <p>Loading recent expenses...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize form
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeAddExpenseForm();
+        loadRecentExpenses();
+    });
+
+    function initializeAddExpenseForm() {
+        // Set today's date as default
+        const todayElement = document.getElementById('expense-date');
+        if (todayElement) {
+            const today = new Date().toISOString().split('T')[0];
+            todayElement.value = today;
+        }
+
+        // Initialize mood selector
+        const moodOptions = document.querySelectorAll('.mood-option');
+        moodOptions.forEach(option => {
+            option.addEventListener('click', function () {
+                moodOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                document.getElementById('selected-mood').value = this.dataset.mood;
+            });
+        });
+
+        // Set default mood
+        if (moodOptions.length > 0) {
+            moodOptions[0].classList.add('selected');
+        }
+
+        // Form validation & Local Storage Save
+        const form = document.getElementById('expense-form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const amountInput = document.getElementById('expense-amount');
+                const amount = parseFloat(amountInput.value);
+
+                if (isNaN(amount) || amount <= 0) {
+                    e.preventDefault();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Please enter a valid amount! 💰', 'error');
+                    } else {
+                        alert('Please enter a valid amount! 💰');
+                    }
+                    return;
+                }
+
+                // Save to local storage for "Recent Expenses" preview
+                const category = document.getElementById('expense-category').value;
+                const description = document.querySelector('input[name="description"]').value || category;
+                const date = document.getElementById('expense-date').value;
+                const mood = document.getElementById('selected-mood').value;
+
+                const newExpense = {
+                    date, category, description, amount, mood,
+                    timestamp: new Date().getTime()
+                };
+
+                const recent = JSON.parse(localStorage.getItem('fingenius_recent_expenses') || '[]');
+                recent.unshift(newExpense);
+                if (recent.length > 5) recent.pop(); // Keep last 5
+                localStorage.setItem('fingenius_recent_expenses', JSON.stringify(recent));
+
+                // Show loading state
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.innerHTML = '⏳ Adding...';
+                // We let the form submit naturally
+            });
+        }
+    }
+
+    function loadRecentExpenses() {
+        const container = document.getElementById('recent-expenses');
+        if (!container) return;
+
+        const recent = JSON.parse(localStorage.getItem('fingenius_recent_expenses') || '[]');
+
+        if (recent.length === 0) {
+            container.innerHTML = `
+                <div class="text-center p-4" style="color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💸</div>
+                    <p>No recently added expenses found.</p>
+                </div>`;
+            return;
+        }
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+        recent.forEach(expense => {
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.2rem;">${expense.mood || '💸'}</span>
+                        <div>
+                            <div style="font-weight: 500; color: var(--text-primary);">${expense.category}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${expense.description}</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; color: var(--error-color);">-{{ currency }}${expense.amount.toFixed(2)}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${expense.date}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function setAmount(amount) {
+        const amountInput = document.getElementById('expense-amount');
+        if (amountInput) {
+            amountInput.value = amount;
+            amountInput.focus();
+        }
+    }
+
+    // Real-time amount formatting
+    const amountInput = document.getElementById('expense-amount');
+    if (amountInput) {
+        amountInput.addEventListener('input', function () {
+            const value = parseFloat(this.value);
+            if (!isNaN(value) && value > 0) {
+                // You could add real-time validation or formatting here
+            }
+        });
+    }
+</script>
+{% endblock %}

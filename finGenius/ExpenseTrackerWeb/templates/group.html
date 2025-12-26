@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}👥 Group Expenses - Fin Genius{% endblock %}
+
+{% block content %}
+<!-- Main Container -->
+<div class="main-container">
+    <!-- Page Header -->
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            Group Expenses
+        </h1>
+        <p class="dashboard-subtitle">Split expenses with friends and track who owes what! 🤝</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-grid">
+        <!-- Create Group Expense -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3
+                style="margin-bottom: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                👥 Create Group Expense
+            </h3>
+
+            <form action="{{ url_for('add_group_expense') }}" method="POST" id="add-group-expense-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📝 Expense Title *</label>
+                        <input type="text" name="title" class="form-input"
+                            placeholder="e.g., Dinner at Restaurant, Movie Night" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">💰 Total Amount *</label>
+                        <div style="position: relative;">
+                            <span
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 600;">{{
+                                currency }}</span>
+                            <input type="number" step="0.01" name="total_amount" class="form-input" placeholder="0.00"
+                                required style="padding-left: 2.5rem;" id="total-amount">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">👥 Participants *</label>
+                        <input type="text" name="participants" class="form-input"
+                            placeholder="Enter names separated by commas (e.g., John, Sarah, Mike)" required>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                            💡 Separate names with commas. You can add yourself too!
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">💳 Paid By *</label>
+                        <input type="text" name="paid_by" class="form-input" placeholder="Who paid for this expense?"
+                            required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">📅 Date</label>
+                        <input type="date" name="date" class="form-input" id="group-expense-date">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📝 Description (Optional)</label>
+                        <input type="text" name="description" class="form-input"
+                            placeholder="Additional details about this expense">
+                    </div>
+                </div>
+
+                <!-- Split Preview -->
+                <div id="split-preview"
+                    style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">💰 Split Preview</h4>
+                    <div id="split-details"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" style="margin-top: 1.5rem;">
+                    👥 Create Group Expense
+                </button>
+            </form>
+        </div>
+
+        <!-- Group Expenses List -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3
+                style="margin-bottom: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                📋 Group Expenses
+            </h3>
+
+            {% if group_expenses %}
+            <div id="group-expenses-container">
+                {% for expense in group_expenses %}
+                <div class="group-expense-card" style="animation: fadeInUp 0.6s ease {{ loop.index0 * 0.1 }}s both;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ expense.title }}</h4>
+                            <div style="color: var(--text-muted); font-size: 0.9rem;">
+                                <span
+                                    style="background: var(--accent-gradient); color: white; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; margin-right: 0.5rem;">
+                                    {{ expense.date }}
+                                </span>
+                                <span>Paid by: <strong>{{ expense.paid_by }}</strong></span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: var(--text-primary); font-weight: 600; font-size: 1.2rem;">
+                                {{ currency }}{{ "%.2f"|format(expense.total_amount) }}
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                                {{ currency }}{{ "%.2f"|format(expense.split_amount) }} per person
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if expense.description %}
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-style: italic;">
+                        "{{ expense.description }}"
+                    </p>
+                    {% endif %}
+
+                    <div style="margin-bottom: 1rem;">
+                        <h5 style="color: var(--text-primary); margin-bottom: 0.5rem;">👥 Participants</h5>
+                        <div class="participants-list">
+                            {% for participant in expense.participants %}
+                            <span class="participant-tag">{{ participant }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div
+                        style="padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small); margin-bottom: 1rem;">
+                        <h5 style="color: var(--text-primary); margin-bottom: 0.5rem;">💸 Who Owes What</h5>
+                        <div style="space-y: 0.5rem;">
+                            {% for participant in expense.participants %}
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span style="color: var(--text-secondary);">{{ participant }}</span>
+                                <span style="color: var(--text-primary); font-weight: 500;">
+                                    {% if participant == expense.paid_by %}
+                                    <span style="color: var(--success-color);">Paid {{ currency }}{{
+                                        "%.2f"|format(expense.total_amount) }}</span>
+                                    {% else %}
+                                    Owes {{ currency }}{{ "%.2f"|format(expense.split_amount) }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-success btn-sm" onclick="markAsSettled({{ expense.id }})">
+                            ✅ Mark as Settled
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="editGroupExpense({{ expense.id }})">
+                            ✏️ Edit
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="remindParticipants({{ expense.id }})">
+                            📱 Send Reminder
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center p-4" style="color: var(--text-muted);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+                <h4>No group expenses yet!</h4>
+                <p>Create your first group expense to start splitting costs with friends.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Settlement Summary -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">💰 Settlement Summary</h3>
+            <div id="settlement-summary">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🤝</div>
+                    <p>All expenses are settled! 🎉</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Split Calculator -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">🧮 Quick Split Calculator</h3>
+            <div style="space-y: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Total Amount</label>
+                    <input type="number" step="0.01" id="calc-amount" class="form-input" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Number of People</label>
+                    <input type="number" id="calc-people" class="form-input" placeholder="2" min="2">
+                </div>
+                <button class="btn btn-outline" onclick="calculateSplit()">Calculate</button>
+                <div id="calc-result"
+                    style="display: none; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small); margin-top: 1rem;">
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Split Result</h4>
+                    <div id="calc-details"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">💡 Pro Tips</h3>
+            <div style="color: var(--text-secondary); line-height: 1.6;">
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>📱 Send Reminders:</strong> Use the reminder feature to nudge friends about pending
+                    payments.
+                </div>
+                <div
+                    style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>✅ Mark as Settled:</strong> Keep track of who has paid their share to avoid confusion.
+                </div>
+                <div style="padding: 1rem; background: var(--bg-glass); border-radius: var(--border-radius-small);">
+                    <strong>🧮 Use Calculator:</strong> Calculate splits before creating expenses to ensure accuracy.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize group page
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeGroupPage();
+    });
+
+    function initializeGroupPage() {
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            if (!input.value) {
+                input.value = today;
+            }
+        });
+
+        // Form validation
+        const addExpenseForm = document.getElementById('add-group-expense-form');
+        if (addExpenseForm) {
+            addExpenseForm.addEventListener('submit', function (e) {
+                const amount = parseFloat(document.getElementById('total-amount').value);
+                const participants = document.querySelectorAll('input[name="participants"]');
+
+                if (isNaN(amount) || amount <= 0) {
+                    e.preventDefault();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Please enter a valid amount! 💰', 'error');
+                    }
+                    return;
+                }
+
+                if (participants.length === 0 && document.querySelector('input[name="participants"]').value.trim() === '') {
+                    e.preventDefault();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Please enter at least one participant! 👥', 'error');
+                    }
+                    return;
+                }
+            });
+        }
+    }
+
+    function calculateSplit() {
+        const amount = parseFloat(document.getElementById('calc-amount').value);
+        const people = parseInt(document.getElementById('calc-people').value);
+
+        if (isNaN(amount) || amount <= 0 || isNaN(people) || people < 2) {
+            if (typeof showNotification === 'function') {
+                showNotification('Please enter valid amount and number of people! 🧮', 'error');
+            }
+            return;
+        }
+
+        const splitAmount = amount / people;
+        const resultDiv = document.getElementById('calc-result');
+        const detailsDiv = document.getElementById('calc-details');
+
+        detailsDiv.innerHTML = `
+                <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    {{ currency }}${splitAmount.toFixed(2)} / person
+                </div>
+            `;
+        resultDiv.style.display = 'block';
+    }
+
+    function markAsSettled(expenseId) {
+        if (confirm('Mark this expense as settled?')) {
+            // Find the expense card
+            const btn = document.querySelector(`button[onclick="markAsSettled(${expenseId})"]`);
+            if (btn) {
+                const card = btn.closest('.group-expense-card');
+                if (card) {
+                    card.style.opacity = '0.7';
+                    card.style.position = 'relative';
+
+                    const badge = document.createElement('div');
+                    badge.innerHTML = '✅ SETTLED';
+                    badge.style.position = 'absolute';
+                    badge.style.top = '50%';
+                    badge.style.left = '50%';
+                    badge.style.transform = 'translate(-50%, -50%) rotate(-15deg)';
+                    badge.style.background = 'var(--success-color)';
+                    badge.style.color = 'white';
+                    badge.style.padding = '0.5rem 1rem';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.borderRadius = '8px';
+                    badge.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+                    badge.style.zIndex = '10';
+                    card.appendChild(badge);
+
+                    btn.disabled = true;
+                    btn.innerHTML = '✅ Settled';
+                }
+            }
+
+            if (typeof showNotification === 'function') {
+                showNotification('Expense marked as settled! ✅', 'success');
+            }
+        }
+    }
+
+    function editGroupExpense(expenseId) {
+        // Simulate loading edit form
+        if (typeof showNotification === 'function') {
+            showNotification('Loading expense details... ✏️', 'info');
+        }
+        setTimeout(() => {
+            // In a real app, this would open a modal or redirect
+            if (typeof showNotification === 'function') {
+                showNotification('Edit mode active (Simulation)', 'success');
+            }
+        }, 1000);
+    }
+
+    function remindParticipants(expenseId) {
+        const btn = document.querySelector(`button[onclick="remindParticipants(${expenseId})"]`);
+        if (btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '📨 Sending...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '✅ Sent!';
+                if (typeof showNotification === 'function') {
+                    showNotification('Reminder sent to all participants! 📱', 'success');
+                }
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            }, 1000);
+        }
+    }
+</script>
+{% endblock %}
